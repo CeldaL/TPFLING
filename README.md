@@ -6,8 +6,8 @@ local player = game.Players.LocalPlayer
 local function autoSuperHeavyRapidPunch()
     while true do
         --  1000 golpes automáticos (puedes ajustar este número)
-        for i = 1, 500 do
-            ReplicatedStorage.Events.Punch:FireServer(0.04, 0.01, 1) -- Golpe rápido
+        for i = 1, 50 do
+            ReplicatedStorage.Events.Punch:FireServer(0.0004, 0.001, 1) -- Golpe rápido
             wait(0.01) -- Intervalo entre golpes (puedes ajustarlo para más rapidez)
         end
 
