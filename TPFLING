@@ -1,0 +1,51 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Función para aplicar el anti-fling y mantener la posición fija
+local function antiFlingPermanent(character)
+    -- Asegúrate de que el personaje esté completamente cargado
+    local humanoid = character:WaitForChild("Humanoid")
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    
+    -- Aplicamos el Anti-Fling, asegurándonos de que todas las partes tengan propiedades físicas extremas
+    for _, child in pairs(character:GetDescendants()) do
+        if child:IsA("BasePart") then
+            child.CustomPhysicalProperties = PhysicalProperties.new(9e110, 9e110, 9e110)  -- Resistencia extrema
+            child.CanCollide = false  -- Deshabilitar la colisión para evitar empujes
+            child.Anchored = true  -- Ancla todas las partes del personaje
+        end
+    end
+    
+    -- Bloquea las acciones del humanoide (caminar, saltar, etc.)
+    humanoid.WalkSpeed = 0  -- Evita que camine
+    humanoid.JumpHeight = 0 -- Evita que salte
+    humanoid.PlatformStand = true  -- Evita que las animaciones de caminar/saltar se reproduzcan
+
+    -- Lo teletransporta al punto deseado
+    humanoidRootPart.CFrame = CFrame.new(-72, 164, -4716)
+
+    -- Asegura que la posición sea fija sin movimiento
+    local bodyPosition = Instance.new("BodyPosition")
+    bodyPosition.MaxForce = Vector3.new(400000, 400000, 400000)  -- Fuerza máxima para mantener la posición
+    bodyPosition.D = 10000  -- Damping (resistencia al movimiento)
+    bodyPosition.P = 10000   -- Propulsión
+    bodyPosition.Position = humanoidRootPart.Position  -- Establecer la posición
+    bodyPosition.Parent = humanoidRootPart
+
+    -- Añadir BodyGyro para mantener la orientación
+    local bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(400000, 400000, 400000)  -- Fuerza máxima para mantener la rotación
+    bodyGyro.CFrame = humanoidRootPart.CFrame  -- Mantener la orientación original
+    bodyGyro.Parent = humanoidRootPart
+end
+
+-- Cada vez que el personaje respawnea o se reinicia, aplicamos el anti-fling y teletransportamos
+player.CharacterAdded:Connect(function(character)
+    -- Llamamos a la función para aplicar el anti-fling cuando el personaje respawnea
+    antiFlingPermanent(character)
+end)
+
+-- Si el personaje ya está presente, aplicamos el anti-fling inmediatamente
+if player.Character then
+    antiFlingPermanent(player.Character)
+end
