@@ -1,0 +1,80 @@
+-- Fast Punch Script (independiente, sin módulos externos)
+local Players = game:GetService("Players")
+local InputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local plr = Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+local hum = char:WaitForChild("Humanoid")
+local root = char:WaitForChild("HumanoidRootPart")
+
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local events = replicatedStorage:FindFirstChild("Events")
+local anims = replicatedStorage:FindFirstChild("Animations")
+
+-- Usa animación por defecto si existe
+local punchAnim = nil
+if anims and anims:FindFirstChild("combat1") then
+	punchAnim = hum:LoadAnimation(anims:FindFirstChild("combat1"))
+end
+
+-- Variables de control
+local punching = false
+local lastPunch = 0
+local punchCooldown = 0.20 -- Puedes aumentar o reducir para más o menos velocidad
+
+-- Evita críticos al forzar daño simple
+local function FireNormalHit()
+	if events and events:FindFirstChild("Punch") then
+		-- Enviamos fuerza y combo fijos para que no sea golpe crítico
+		events.Punch:FireServer(0.5, 0.1, 1)
+	end
+end
+
+local function DoPunch()
+	if not hum or hum.Health <= 0 then return end
+	if tick() - lastPunch < punchCooldown then return end
+
+	lastPunch = tick()
+
+	-- Ejecutar animación si existe
+	if punchAnim then
+		punchAnim:Play(0.1, 1, 2.5)
+	end
+
+	FireNormalHit()
+
+	-- Detener animación suavemente
+	task.delay(0.15, function()
+		if punchAnim then punchAnim:Stop() end
+	end)
+end
+
+-- Golpes mientras mantienes presionado click
+RunService.Heartbeat:Connect(function()
+	if punching then
+		DoPunch()
+	end
+end)
+
+InputService.InputBegan:Connect(function(input, processed)
+	if not processed and input.UserInputType == Enum.UserInputType.MouseButton1 then
+		punching = true
+	end
+end)
+
+InputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		punching = false
+	end
+end)
+
+-- Reiniciar referencias al reaparecer
+plr.CharacterAdded:Connect(function(newChar)
+	char = newChar
+	hum = char:WaitForChild("Humanoid")
+	root = char:WaitForChild("HumanoidRootPart")
+	if anims and anims:FindFirstChild("combat1") then
+		punchAnim = hum:LoadAnimation(anims:FindFirstChild("combat1"))
+	end
+end)
